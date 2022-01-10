@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::fmt::Formatter;
 use spectral::assert_that;
 
 // This is a deck with length = 6 and width = 4
@@ -124,6 +125,10 @@ impl Line {
             Vec::<Junction>::new()
         }
     }
+
+    fn to_string(&self) -> String {
+        format!("[{}]", self.0.iter().map(|p| p.length.to_string()).collect::<Vec<String>>().join(", "))
+    }
 }
 
 /// A Junction is a coordinate in a 1 dimension plan corresponding to two plank edges
@@ -177,7 +182,7 @@ fn should_use_macro_with_2_planks() {
     assert_eq!(expected, actual);
 }
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(PartialEq, Clone, Default)]
 pub struct Calepinage(pub Vec<Line>);
 
 impl Calepinage {
@@ -186,6 +191,22 @@ impl Calepinage {
 
         lines.push(new_line_to_add);
         Calepinage(lines)
+    }
+
+    fn to_string(&self) -> String {
+        format!("Calepinage({})", self.0.iter().map(|line| line.to_string()).collect::<Vec<String>>().join(", "))
+    }
+}
+
+impl std::fmt::Display for Calepinage {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_string())
+    }
+}
+
+impl std::fmt::Debug for Calepinage {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_string())
     }
 }
 
@@ -288,9 +309,11 @@ fn assert_length_goal_fulfilled(
     }
 }
 
+pub type CalepineResult = Result<Calepinage, CalepinageError>;
+
 
 #[test]
-fn foo() {
+fn test_only_unusable_planks_remaining_to_string() {
     let deck = Deck {
         length: 10,
         width: 3,
@@ -303,16 +326,15 @@ fn foo() {
             Plank { length: 5 },
             Plank { length: 8 },
             Plank { length: 5 },
-        ], //
+        ],
     );
     let result = calepine(plank_heap, deck);
     assert_that!(result).is_equal_to(
         Err(CalepinageError::OnlyUnusablePlanksRemaining("remaining = [8, 8, 5, 5, 5], selected = [8], stash = None".to_string())))
 }
 
-
 #[test]
-fn step_to_string() {
+fn test_step_to_string() {
 
     let step = CalepineStep {
         remaining: PlankHeap::from_planks(
@@ -330,32 +352,48 @@ fn step_to_string() {
     assert_that!(step.to_string()).is_equal_to("remaining = [8, 8, 5, 5, 5], selected = [8], stash = None".to_string());
 }
 
-
 #[test]
-fn make_stash_algo_fail() {
-    let deck = Deck {
-        length: 12,
-        width: 3,
-    };
-    let plank_heap = PlankHeap::from_planks(
-        vec![
-            Plank { length: 10 },
-            Plank { length: 10 },
-            Plank { length: 10 },
-            Plank { length: 2 },
-            Plank { length: 2 },
-            Plank { length: 2 },
-        ], //
-    );
-    let result = calepine(plank_heap, deck);
-
-    assert_that!(result).is_equal_to(Ok(
-        Calepinage::default()
-            .with_line(plank_line![Plank { length: 10 }, Plank { length: 2 }])
-            .with_line(plank_line![Plank { length: 2 }, Plank { length: 10}])
-            .with_line(plank_line![Plank { length: 10 }, Plank { length: 2 }])
-    ));
+fn test_line_to_string() {
+    let line = plank_line![Plank { length: 10 }, Plank { length: 2 }];
+    assert_that!(line.to_string()).is_equal_to("[10, 2]".to_string());
 }
 
-// "remaining = [8, 8, 5, 5, 5], selected = [8], stash = None
-// "remaining = [5, 5, 5], selected = [8, 8, 8], stash = None
+#[test]
+fn test_calepine_to_string() {
+    let calepinage = Calepinage::default()
+        .with_line(plank_line![Plank { length: 10 }, Plank { length: 2 }])
+        .with_line(plank_line![Plank { length: 2 }, Plank { length: 10}])
+        .with_line(plank_line![Plank { length: 10 }, Plank { length: 2 }]);
+
+    assert_that!(calepinage.to_string()).is_equal_to("Calepinage([10, 2], [2, 10], [10, 2])".to_string());
+}
+
+#[test]
+fn test_calepine_display() {
+    let calepinage = Calepinage::default()
+        .with_line(plank_line![Plank { length: 10 }, Plank { length: 2 }])
+        .with_line(plank_line![Plank { length: 2 }, Plank { length: 10}])
+        .with_line(plank_line![Plank { length: 10 }, Plank { length: 2 }]);
+
+    assert_that!(format!("{}", calepinage)).is_equal_to("Calepinage([10, 2], [2, 10], [10, 2])".to_string());
+}
+
+#[test]
+fn test_result_calepine_display() {
+    let calepinage = Calepinage::default()
+        .with_line(plank_line![Plank { length: 10 }, Plank { length: 2 }])
+        .with_line(plank_line![Plank { length: 2 }, Plank { length: 10}])
+        .with_line(plank_line![Plank { length: 10 }, Plank { length: 2 }]);
+
+    assert_that!(format!("{}", calepinage)).is_equal_to("Calepinage([10, 2], [2, 10], [10, 2])".to_string());
+}
+
+#[test]
+fn test_result_calepine_debug() {
+    let calepinage = Calepinage::default()
+        .with_line(plank_line![Plank { length: 10 }, Plank { length: 2 }])
+        .with_line(plank_line![Plank { length: 2 }, Plank { length: 10}])
+        .with_line(plank_line![Plank { length: 10 }, Plank { length: 2 }]);
+
+    assert_that!(format!("{:?}", calepinage)).is_equal_to("Calepinage([10, 2], [2, 10], [10, 2])".to_string());
+}

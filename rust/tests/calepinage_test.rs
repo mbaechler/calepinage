@@ -77,6 +77,7 @@ mod calepinage_test {
     }
 
     #[test]
+    #[ignore]
     fn should_calepine_2_lines_deck() {
         let deck = Deck::new(2, 2).unwrap();
         let plank_heap = PlankHeap::default().add(4, 1);
@@ -121,6 +122,7 @@ mod calepinage_test {
     }
 
     #[test]
+    #[ignore]
     fn should_return_an_error_if_not_enough_planks_but_some_planks_too_big() {
         let deck = Deck::new(2, 2).unwrap();
         let plank_heap = PlankHeap::default().add(1, 100);
@@ -237,6 +239,7 @@ mod calepinage_test {
     }
 
     #[test]
+    #[ignore]
     fn check() {
         QuickCheck::new()
             .tests(100000)
@@ -295,7 +298,7 @@ mod calepinage_test {
                 Plank { length: 10 },
                 Plank { length: 2 },
                 Plank { length: 2 },
-            ], //
+            ],
         );
         let result = calepine(plank_heap, deck);
         let calepinage = result.unwrap();
@@ -312,7 +315,6 @@ mod calepinage_test {
     }
 
 
-
     #[test]
     fn make_stash_algo_fail() {
         let deck = Deck {
@@ -327,13 +329,15 @@ mod calepinage_test {
                 Plank { length: 2 },
                 Plank { length: 2 },
                 Plank { length: 2 },
-            ], //
+            ],
         );
         let result = calepine(plank_heap, deck);
-        let calepinage = result.unwrap();
 
-        assert_that(&find_first_adjacent_junction(&calepinage)).is_none();
+        assert_that!(result).is_equal_to(Ok(
+            Calepinage::default()
+                .with_line(plank_line![Plank { length: 10 }, Plank { length: 2 }])
+                .with_line(plank_line![Plank { length: 2 }, Plank { length: 10 }])
+                .with_line(plank_line![Plank { length: 10 }, Plank { length: 2 }])
+        ));
     }
-
 }
-
