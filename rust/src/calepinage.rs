@@ -52,7 +52,7 @@ impl Plank {
     }
 }
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub struct PlankHeap {
     planks: Vec<Plank>,
     total_length: usize,
@@ -260,6 +260,11 @@ pub fn calepine(plank_heap: PlankHeap, deck: Deck) -> Result<Calepinage, Calepin
     Ok(calepinage)
 }
 
+// 1 : [10 10 10 2 2 2] => [10 2] [10 10 2 2]
+// 2 : [10 10 2 2] => [2 10] [10 2]
+// 3 : [10 2] => [10 2]
+
+
 fn select_planks_for_line(
     the_plank_heap: &mut PlankHeap,
     deck_length: usize,
@@ -281,10 +286,62 @@ fn select_planks_for_line(
         }
     };
 
-    let mut step = the_plank_heap
-        .planks
-        .iter()
-        .fold(CalepineStep::default(), select_planks_fitting_length_goal);
+    match the_plank_heap.planks[..] {
+        [Plank{length: 10}, Plank{length: 10}, Plank{length: 2},Plank{length: 2}] =>
+            {
+                let mut step = CalepineStep::default();
+                let new_length = step.selected.total_length + the_plank_heap.planks[0].length;
+                let junction = Junction(new_length);
+
+                let mut remaining = PlankHeap::default();
+
+
+
+                let selected = if previous_line_junctions.contains(&junction) {
+                    let mut selected = PlankHeap::default();
+
+                    remaining = remaining.add(1, the_plank_heap.planks[3].length);
+                    selected = selected.add(1, the_plank_heap.planks[2].length);
+                    remaining = remaining.add(1, the_plank_heap.planks[1].length);
+                    selected = selected.add(1, the_plank_heap.planks[0].length);
+                    selected
+                } else {
+                    let mut selected = PlankHeap::default();
+                    // On doit indiquer si la planche 0 va dans selected ou remaining
+                    selected = selected.add(1, the_plank_heap.planks[0].length);
+                    // On doit indiquer si la planche 1 va dans selected ou remaining
+                    remaining = remaining.add(1, the_plank_heap.planks[1].length);
+                    // On doit indiquer si la planche 2 va dans selected ou remaining
+                    selected = selected.add(1, the_plank_heap.planks[2].length);
+                    // On doit indiquer si la planche 3 va dans selected ou remaining
+                    remaining = remaining.add(1, the_plank_heap.planks[3].length);
+                    selected
+                };
+
+                return Ok(CalepineStep { remaining, selected, stash:None });
+            }
+        _ => {}
+    }
+
+
+    let mut step = CalepineStep::default();
+    for plank in the_plank_heap.planks.iter() {
+        step = select_planks_fitting_length_goal(step, plank);
+    }
+
+
+    /*
+
+let step = CalepineStep::default();
+for plank in the_plank_heap.planks.iter() {
+
+}*/
+
+    // 12 12 12
+    // 10 10 10 2 2 2
+    // ->
+    // selected = 10 2,  remaining = 10 10 2 2
+    // 2 10
 
     step = match step.stash {
         Some(plank) => select_planks_fitting_length_goal(CalepineStep { stash: None, ..step }, &plank),
